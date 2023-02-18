@@ -1,21 +1,33 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+body {
+  background-color: rgb(56, 54, 54);
 }
 
-
 .App {
+  color: lightgray;
+
+  min-height: 100vh;
+  max-width: 30rem;
+  margin: 0 auto;
+}
+
+article {
+  border: 1px solid white;
+  border-radius: 15px;
+  padding: 2rem;
+}
+
+section {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
 }
 
-p {
-  font-size: 1.5rem;
+section > * {
+  margin-top: 1rem;
 }
 
-button {
-  border: 1px solid #0005;
+form {
+  display: flex;
+  flex-direction: column;
+
 }
