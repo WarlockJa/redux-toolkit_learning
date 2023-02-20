@@ -60,10 +60,10 @@ const postSlice = createSlice({
     initialState,
     reducers: {
         postAdded: {
-            reducer(state, action) {
+            reducer(state, action: PrepareReturnType) {
                 state.push(action.payload)
             },
-            prepare({ title, content, userId }: PreparePropsType): PrepareReturnType {
+            prepare({ title, content, userId }: PreparePropsType) {
                 return {
                     payload: {
                         id: nanoid(),
