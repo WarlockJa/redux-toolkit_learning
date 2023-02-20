@@ -1,42 +1,20 @@
-import { createSlice, nanoid } from "@reduxjs/toolkit";
+import { createSlice, nanoid, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
-import { sub } from 'date-fns'
+import axios from 'axios'
+import { sub } from "date-fns";
 
-const initialState: PostType[] = [
-    {
-        id: '1',
-        title: 'Learning Redux Toolkit',
-        content: "I've heard good things.",
-        userId: '2',
-        postDate: sub(new Date(), { minutes: 10 }).toISOString(),
-        reactions: {
-            thumbsUp: 0,
-            wow: 0,
-            heart: 0,
-            rocket: 0,
-            coffee: 0
-        }
-    },
-    {
-        id: '2',
-        title: 'Slices...',
-        content: "The more I say slice, the more I want pizza.",
-        userId: '2',
-        postDate: sub(new Date(), { minutes: 5 }).toISOString(),
-        reactions: {
-            thumbsUp: 0,
-            wow: 0,
-            heart: 0,
-            rocket: 0,
-            coffee: 0
-        }
-    }
-]
+const POSTS_URL = 'http://jsonplaceholder.typicode.com/posts'
+
+interface AsyncInitialState {
+    posts: PostType[],
+    status: 'idle' | 'loading' | 'succeded' | 'failed',
+    error: string | undefined
+}
 
 interface PreparePropsType {
     title: string;
-    content: string;
-    userId: string;
+    body: string;
+    userId: string | number;
 }
 
 export interface PostType extends PreparePropsType {
@@ -55,20 +33,41 @@ type PrepareReturnType = {
     payload: PostType
 }
 
+type FetchPayloadType = {
+    payload: PostType[]
+}
+
+const initialState: AsyncInitialState = 
+{
+    posts: [],
+    status: 'idle',
+    error: undefined
+}
+
+export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
+    const response = await axios.get(POSTS_URL)
+    return response.data
+})
+
+export const addNewPost = createAsyncThunk('posts/addNewPost', async (initialPost: { title: string, body: string, userId: string | number }) => {
+    const response = await axios.post(POSTS_URL, initialPost)
+    return response.data
+})
+
 const postSlice = createSlice({
     name: 'posts',
     initialState,
     reducers: {
         postAdded: {
             reducer(state, action: PrepareReturnType) {
-                state.push(action.payload)
+                state.posts.push(action.payload)
             },
-            prepare({ title, content, userId }: PreparePropsType) {
+            prepare({ title, body, userId }: PreparePropsType) {
                 return {
                     payload: {
                         id: nanoid(),
                         title,
-                        content,
+                        body,
                         userId,
                         postDate: new Date().toISOString(),
                         reactions: {
@@ -84,15 +83,68 @@ const postSlice = createSlice({
         },
         reactionAdded(state, action) {
             const { postId, reaction } = action.payload as { postId: string, reaction: string }
-            const existingPost = state.find(post => post.id === postId)
+            const existingPost = state.posts.find(post => post.id === postId)
             if (existingPost) {
                 existingPost.reactions[reaction]++
             }
         }
+    },
+    extraReducers(builder) {
+        builder
+            .addCase(fetchPosts.pending, (state, action) => {
+                state.status = 'loading'
+            })
+            .addCase(fetchPosts.fulfilled, (state, action: FetchPayloadType) => {
+                state.status = 'succeded'
+                // adding date and reactions
+                let min = 1
+                const loadedPosts = action.payload.map(post => {
+                    post.postDate = sub(new Date(), { minutes: min++ }).toISOString()
+                    post.reactions = {
+                        thumbsUp: 0,
+                        wow: 0,
+                        heart: 0,
+                        rocket: 0,
+                        coffee: 0
+                    }
+                    return post
+                })
+
+                // add fetched posts to the array
+                state.posts = state.posts.concat(loadedPosts)
+            })
+            .addCase(fetchPosts.rejected, (state, action) => {
+                state.status = 'failed'
+                state.error = action.error.message
+            })
+            .addCase(addNewPost.fulfilled, (state, action: PrepareReturnType) => {
+                const sortedPosts = state.posts.sort((a, b) => {
+                    if (a.id > b.id) return 1
+                    if (a.id < b.id) return -1
+                    return 0
+                })
+
+                // fix for the API id mismatch
+                action.payload.id = sortedPosts[sortedPosts.length - 1].id + 1
+
+                action.payload.userId = Number(action.payload.userId)
+                action.payload.postDate = new Date().toISOString()
+                action.payload.reactions = {
+                    thumbsUp: 0,
+                    wow: 0,
+                    heart: 0,
+                    rocket: 0,
+                    coffee: 0
+                }
+
+                state.posts.push(action.payload)
+            })
     }
 })
 
-export const selectAllPosts = (state: RootState) => state.posts
+export const selectAllPosts = (state: RootState) => state.posts.posts
+export const getPostsStatus = (state: RootState) => state.posts.status
+export const getPostsError = (state: RootState) => state.posts.error
 
 export const { postAdded, reactionAdded } = postSlice.actions
 
