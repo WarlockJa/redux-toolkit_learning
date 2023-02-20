@@ -3,7 +3,7 @@ body {
 }
 
 .App {
-  color: lightgray;
+  color: var(--main-fontColor);
 
   min-height: 100vh;
   max-width: 30rem;
@@ -30,4 +30,18 @@ form {
   display: flex;
   flex-direction: column;
 
+}
+
+.postCredit {
+  text-align: end;
+  font-size: 1rem;
+}
+
+.reactionButton {
+  background: transparent;
+  border: 1px solid brown;
+  border-radius: 10px;
+  font-size: 1rem;
+  color: var(--main-fontColor);
+  cursor: pointer;
 }
