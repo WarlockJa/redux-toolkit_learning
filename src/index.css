@@ -32,6 +32,12 @@ textarea {
 button {
   font-size: 1.5rem;
   margin-top: 1rem;
+  border: transparent;
+  cursor: pointer;
+}
+
+button:hover {
+  box-shadow: 0 0 2px 2px brown;
 }
 
 p, select, option {

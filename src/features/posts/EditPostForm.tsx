@@ -11,14 +11,6 @@ const EditPostForm = () => {
     const { postId } = useParams()
     const navigate = useNavigate()
 
-    if (!postId) {
-        return (
-            <section>
-                <h2>Post not found!</h2>
-            </section>
-        )
-    }
-
     const post: PostType | undefined = useSelector((state: RootState) => selectPostById(state, Number(postId)))
     const users = useSelector(selectAllUsers)
     
@@ -96,7 +88,7 @@ const EditPostForm = () => {
                     onChange={onTitleChange}
                 />
                 <label htmlFor="postAuthor">Author:</label>
-                <select id="postAuthor" defaultValue={userId} value={userId} onChange={onAuthorChange}>
+                <select id="postAuthor" value={userId} onChange={onAuthorChange}>
                     <>
                         <option value=""></option>
                         {usersOptions}
@@ -115,6 +107,7 @@ const EditPostForm = () => {
                     disabled={!canSave}
                 >Save Post</button>
                 <button
+                    className="deleteButton"
                     type="button"
                     onClick={onDeletePostClicked}
                     disabled={!canSave}

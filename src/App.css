@@ -46,7 +46,10 @@ form {
   border-radius: 10px;
   font-size: 1rem;
   color: var(--main-fontColor);
-  cursor: pointer;
+}
+
+.deleteButton {
+  background-color: brown;
 }
 
 .header {
@@ -69,6 +72,8 @@ form {
 .header > nav > ul {
   display: flex;
   gap: 1rem;
+
+  align-items: center;
 
   list-style: none;
 }

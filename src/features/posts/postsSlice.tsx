@@ -1,4 +1,4 @@
-import { createSlice, nanoid, createAsyncThunk, AnyAction } from "@reduxjs/toolkit";
+import { createSlice, nanoid, createAsyncThunk, AnyAction, SerializedError } from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
 import axios from 'axios'
 import { sub } from "date-fns";
@@ -6,9 +6,10 @@ import { sub } from "date-fns";
 const POSTS_URL = 'http://jsonplaceholder.typicode.com/posts'
 
 interface AsyncInitialState {
-    posts: PostType[],
-    status: 'idle' | 'loading' | 'succeded' | 'failed',
-    error: string | undefined
+    posts: PostType[];
+    status: 'idle' | 'loading' | 'succeded' | 'failed';
+    error: string | undefined;
+    count: number;
 }
 
 interface PreparePropsType {
@@ -29,7 +30,7 @@ export interface PostType extends PreparePropsType {
     }
 }
 
-export interface updatePostType extends PreparePropsType {
+export interface UpdatePostType extends PreparePropsType {
     id: number;
     reactions: {
         [thumbsUp: string]: number;
@@ -58,7 +59,8 @@ const initialState: AsyncInitialState =
 {
     posts: [],
     status: 'idle',
-    error: undefined
+    error: undefined,
+    count: 0
 }
 
 export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
@@ -71,7 +73,7 @@ export const addNewPost = createAsyncThunk('posts/addNewPost', async (initialPos
     return response.data
 })
 
-export const updatePost = createAsyncThunk('posts/updatePost', async (initialPost: updatePostType) => {
+export const updatePost = createAsyncThunk('posts/updatePost', async (initialPost: UpdatePostType) => {
     const { id } = initialPost
     try {
         const response = await axios.put(`${POSTS_URL}/${id}`, initialPost)
@@ -91,35 +93,15 @@ const postSlice = createSlice({
     name: 'posts',
     initialState,
     reducers: {
-        postAdded: {
-            reducer(state, action: PrepareReturnType) {
-                state.posts.push(action.payload)
-            },
-            prepare({ title, body, userId }: PreparePropsType) {
-                return {
-                    payload: {
-                        id: Number(nanoid()),
-                        title,
-                        body,
-                        userId,
-                        postDate: new Date().toISOString(),
-                        reactions: {
-                            thumbsUp: 0,
-                            wow: 0,
-                            heart: 0,
-                            rocket: 0,
-                            coffee: 0
-                        }
-                    }
-                }
-            }
-        },
-        reactionAdded(state, action) {
-            const { postId, reaction } = action.payload as { postId: number, reaction: string }
+        reactionAdded(state, action: { payload: { postId: number, reaction: string }}) {
+            const { postId, reaction } = action.payload
             const existingPost = state.posts.find(post => post.id === postId)
             if (existingPost) {
                 existingPost.reactions[reaction]++
             }
+        },
+        increaseCount(state) {
+            state.count++
         }
     },
     extraReducers(builder) {
@@ -199,9 +181,11 @@ const postSlice = createSlice({
 export const selectAllPosts = (state: RootState) => state.posts.posts
 export const getPostsStatus = (state: RootState) => state.posts.status
 export const getPostsError = (state: RootState) => state.posts.error
+export const getCount = (state: RootState) => state.posts.count
 
 export const selectPostById = (state: RootState, postId: number) => state.posts.posts.find(post => post.id === postId)
+export const postsByUser = (state: RootState, userId: number) => state.posts.posts.filter(post => post.userId === userId)
 
-export const { postAdded, reactionAdded } = postSlice.actions
+export const { reactionAdded, increaseCount } = postSlice.actions
 
 export default postSlice.reducer
