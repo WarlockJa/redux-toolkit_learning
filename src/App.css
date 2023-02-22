@@ -1,5 +1,5 @@
 body {
-  background-color: rgb(56, 54, 54);
+  background-color: var(--main-bgColor);
 }
 
 .App {
@@ -33,6 +33,9 @@ form {
 }
 
 .postCredit {
+  display: flex;
+  justify-content: flex-end;
+
   text-align: end;
   font-size: 1rem;
 }
@@ -44,4 +47,32 @@ form {
   font-size: 1rem;
   color: var(--main-fontColor);
   cursor: pointer;
+}
+
+.header {
+  position: sticky;
+  left: 0;
+  top: 0;
+  right: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background-color: var(--main-bgColor);
+}
+
+.header > h1 {
+  font-size: 2rem;
+}
+
+.header > nav > ul {
+  display: flex;
+  gap: 1rem;
+
+  list-style: none;
+}
+
+.header > nav > ul > li > a {
+  font-size: 1.5rem;
 }

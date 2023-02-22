@@ -1,4 +1,4 @@
-import { createSlice, nanoid, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, nanoid, createAsyncThunk, AnyAction } from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
 import axios from 'axios'
 import { sub } from "date-fns";
@@ -14,12 +14,23 @@ interface AsyncInitialState {
 interface PreparePropsType {
     title: string;
     body: string;
-    userId: string | number;
+    userId: number;
 }
 
 export interface PostType extends PreparePropsType {
-    id: string;
+    id: number;
     postDate: string;
+    reactions: {
+        [thumbsUp: string]: number;
+        wow: number;
+        heart: number;
+        rocket: number;
+        coffee: number;
+    }
+}
+
+export interface updatePostType extends PreparePropsType {
+    id: number;
     reactions: {
         [thumbsUp: string]: number;
         wow: number;
@@ -37,6 +48,12 @@ type FetchPayloadType = {
     payload: PostType[]
 }
 
+type DeleteActionType = {
+    payload?: {
+        id: number
+    }
+}
+
 const initialState: AsyncInitialState = 
 {
     posts: [],
@@ -49,9 +66,25 @@ export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
     return response.data
 })
 
-export const addNewPost = createAsyncThunk('posts/addNewPost', async (initialPost: { title: string, body: string, userId: string | number }) => {
+export const addNewPost = createAsyncThunk('posts/addNewPost', async (initialPost: { title: string, body: string, userId: number }) => {
     const response = await axios.post(POSTS_URL, initialPost)
     return response.data
+})
+
+export const updatePost = createAsyncThunk('posts/updatePost', async (initialPost: updatePostType) => {
+    const { id } = initialPost
+    try {
+        const response = await axios.put(`${POSTS_URL}/${id}`, initialPost)
+        return response.data
+    } catch (error) {
+        return initialPost // only for testing Redux
+    }
+})
+
+export const deletePost = createAsyncThunk('posts/deletePost', async (initialPost: { id: number }) => {
+    const { id } = initialPost
+    const response = await axios.delete(`${POSTS_URL}/${id}`)
+    return response?.status === 200 ? initialPost : `${response?.status} ${response?.statusText}`
 })
 
 const postSlice = createSlice({
@@ -65,7 +98,7 @@ const postSlice = createSlice({
             prepare({ title, body, userId }: PreparePropsType) {
                 return {
                     payload: {
-                        id: nanoid(),
+                        id: Number(nanoid()),
                         title,
                         body,
                         userId,
@@ -82,7 +115,7 @@ const postSlice = createSlice({
             }
         },
         reactionAdded(state, action) {
-            const { postId, reaction } = action.payload as { postId: string, reaction: string }
+            const { postId, reaction } = action.payload as { postId: number, reaction: string }
             const existingPost = state.posts.find(post => post.id === postId)
             if (existingPost) {
                 existingPost.reactions[reaction]++
@@ -91,7 +124,7 @@ const postSlice = createSlice({
     },
     extraReducers(builder) {
         builder
-            .addCase(fetchPosts.pending, (state, action) => {
+            .addCase(fetchPosts.pending, (state) => {
                 state.status = 'loading'
             })
             .addCase(fetchPosts.fulfilled, (state, action: FetchPayloadType) => {
@@ -139,12 +172,35 @@ const postSlice = createSlice({
 
                 state.posts.push(action.payload)
             })
+            .addCase(updatePost.fulfilled, (state, action: PrepareReturnType) => {
+                if(!action.payload?.id) {
+                    console.log('Update could not complete')
+                    console.log(action.payload)
+                    return
+                }
+                const { id } = action.payload
+                action.payload.postDate = new Date().toISOString()
+                // const posts = state.posts.filter(post => post.id === id)
+                // state.posts = [...posts, action.payload]
+                state.posts = state.posts.map(post => post.id === id ? action.payload : post)
+            })
+            .addCase(deletePost.fulfilled, (state, action: any) => { // TODO: figure out why DeleteActionType is not accepted
+                if(!action.payload?.id) {
+                    console.log('Cannot delete, post not found')
+                    console.log(action.payload)
+                    return
+                }
+                const { id } = action.payload
+                state.posts = state.posts.filter(post => post.id !== id)
+            })
     }
 })
 
 export const selectAllPosts = (state: RootState) => state.posts.posts
 export const getPostsStatus = (state: RootState) => state.posts.status
 export const getPostsError = (state: RootState) => state.posts.error
+
+export const selectPostById = (state: RootState, postId: number) => state.posts.posts.find(post => post.id === postId)
 
 export const { postAdded, reactionAdded } = postSlice.actions
 

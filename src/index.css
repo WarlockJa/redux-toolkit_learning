@@ -6,6 +6,7 @@
   -webkit-text-size-adjust: 100%;
 
   --main-fontColor: lightgray;
+  --main-bgColor: rgb(56, 54, 54);
 }
 
 * {
@@ -17,11 +18,11 @@ h1 {
 }
 
 h2 {
-  font-size: 2.5rem;
+  font-size: 1.5rem;
 }
 
 h3, label, input, textarea {
-  font-size: 2rem;
+  font-size: 1.5rem;
 }
 
 textarea {
@@ -35,6 +36,11 @@ button {
 
 p, select, option {
   font-size: 1.5rem;
+}
+
+a {
+  text-decoration: none;
+  color: var(--main-fontColor);
 }
 
 @media (prefers-color-scheme: light) {
