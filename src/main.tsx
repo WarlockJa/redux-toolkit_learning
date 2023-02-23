@@ -12,7 +12,7 @@ store.dispatch(fetchUsers())
 store.dispatch(fetchPosts())
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  // <React.StrictMode>
+  <React.StrictMode>
     <Provider store={store}>
       <BrowserRouter>
         <Routes>
@@ -20,5 +20,5 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
         </Routes>
       </BrowserRouter>
     </Provider>
-  // {/* </React.StrictMode> */}
+  </React.StrictMode>
 )
