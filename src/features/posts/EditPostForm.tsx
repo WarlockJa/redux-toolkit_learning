@@ -11,7 +11,7 @@ const EditPostForm = () => {
     const { postId } = useParams()
     const navigate = useNavigate()
 
-    const post: PostType | undefined = useSelector((state: RootState) => selectPostById(state, Number(postId)))
+    const post = useSelector<RootState>((state) => selectPostById(state, Number(postId))) as PostType | undefined
     const users = useSelector(selectAllUsers)
     
     if (!post) {

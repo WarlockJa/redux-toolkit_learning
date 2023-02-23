@@ -20,7 +20,7 @@ const SinglePostPage = () => {
         )
     }
 
-    const post: PostType | undefined = useSelector((state: RootState) => selectPostById(state, Number(postId)))
+    const post = useSelector<RootState>((state) => selectPostById(state, Number(postId))) as PostType | undefined
 
     if (!post) {
         return (

@@ -1,16 +1,9 @@
-import { createSlice, nanoid, createAsyncThunk, AnyAction, SerializedError } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, createSelector, createEntityAdapter } from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
 import axios from 'axios'
 import { sub } from "date-fns";
 
 const POSTS_URL = 'http://jsonplaceholder.typicode.com/posts'
-
-interface AsyncInitialState {
-    posts: PostType[];
-    status: 'idle' | 'loading' | 'succeded' | 'failed';
-    error: string | undefined;
-    count: number;
-}
 
 interface PreparePropsType {
     title: string;
@@ -50,18 +43,22 @@ type FetchPayloadType = {
 }
 
 type DeleteActionType = {
-    payload?: {
+    payload: {
         id: number
     }
 }
 
-const initialState: AsyncInitialState = 
+const postsAdapter = createEntityAdapter<PostType>({
+    sortComparer: (a, b) => b.postDate.localeCompare(a.postDate)
+})
+
+// const initialState: AsyncInitialState = postsAdapter.getInitialState(
+const initialState = postsAdapter.getInitialState(
 {
-    posts: [],
     status: 'idle',
-    error: undefined,
+    error: '',
     count: 0
-}
+})
 
 export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
     const response = await axios.get(POSTS_URL)
@@ -95,7 +92,8 @@ const postSlice = createSlice({
     reducers: {
         reactionAdded(state, action: { payload: { postId: number, reaction: string }}) {
             const { postId, reaction } = action.payload
-            const existingPost = state.posts.find(post => post.id === postId)
+            // const existingPost = state.posts.find(post => post.id === postId)
+            const existingPost = state.entities[postId]
             if (existingPost) {
                 existingPost.reactions[reaction]++
             }
@@ -126,21 +124,22 @@ const postSlice = createSlice({
                 })
 
                 // add fetched posts to the array
-                state.posts = state.posts.concat(loadedPosts)
+                // state.posts = state.posts.concat(loadedPosts)
+                postsAdapter.upsertMany(state, loadedPosts)
             })
             .addCase(fetchPosts.rejected, (state, action) => {
                 state.status = 'failed'
-                state.error = action.error.message
+                if(action.error.message) state.error = action.error.message
             })
             .addCase(addNewPost.fulfilled, (state, action: PrepareReturnType) => {
-                const sortedPosts = state.posts.sort((a, b) => {
-                    if (a.id > b.id) return 1
-                    if (a.id < b.id) return -1
-                    return 0
-                })
+                // const sortedPosts = state.posts.sort((a, b) => {
+                //     if (a.id > b.id) return 1
+                //     if (a.id < b.id) return -1
+                //     return 0
+                // })
 
-                // fix for the API id mismatch
-                action.payload.id = sortedPosts[sortedPosts.length - 1].id + 1
+                // // fix for the API id mismatch
+                // action.payload.id = sortedPosts[sortedPosts.length - 1].id + 1
 
                 action.payload.userId = Number(action.payload.userId)
                 action.payload.postDate = new Date().toISOString()
@@ -152,7 +151,8 @@ const postSlice = createSlice({
                     coffee: 0
                 }
 
-                state.posts.push(action.payload)
+                // state.posts.push(action.payload)
+                postsAdapter.addOne(state, action.payload)
             })
             .addCase(updatePost.fulfilled, (state, action: PrepareReturnType) => {
                 if(!action.payload?.id) {
@@ -160,11 +160,12 @@ const postSlice = createSlice({
                     console.log(action.payload)
                     return
                 }
-                const { id } = action.payload
+                // const { id } = action.payload
                 action.payload.postDate = new Date().toISOString()
-                // const posts = state.posts.filter(post => post.id === id)
+                // const posts = state.posts.filter(post => post.id !== id)
                 // state.posts = [...posts, action.payload]
-                state.posts = state.posts.map(post => post.id === id ? action.payload : post)
+                // state.posts = state.posts.map(post => post.id === id ? action.payload : post)
+                postsAdapter.upsertOne(state, action.payload)
             })
             .addCase(deletePost.fulfilled, (state, action: any) => { // TODO: figure out why DeleteActionType is not accepted
                 if(!action.payload?.id) {
@@ -173,18 +174,26 @@ const postSlice = createSlice({
                     return
                 }
                 const { id } = action.payload
-                state.posts = state.posts.filter(post => post.id !== id)
+                // state.posts = state.posts.filter(post => post.id !== id)
+                postsAdapter.removeOne(state, id)
             })
     }
 })
 
-export const selectAllPosts = (state: RootState) => state.posts.posts
+export const {
+    selectAll: selectAllPosts,
+    selectById: selectPostById,
+    selectIds: selectPostIds
+    // pass is a selector that returns the posts slice of state
+} = postsAdapter.getSelectors<RootState>(state => state.posts)
+
+// export const selectAllPosts = (state: RootState) => state.posts.posts
 export const getPostsStatus = (state: RootState) => state.posts.status
 export const getPostsError = (state: RootState) => state.posts.error
 export const getCount = (state: RootState) => state.posts.count
 
-export const selectPostById = (state: RootState, postId: number) => state.posts.posts.find(post => post.id === postId)
-export const postsByUser = (state: RootState, userId: number) => state.posts.posts.filter(post => post.userId === userId)
+// export const selectPostById = (state: RootState, postId: number) => state.posts.posts.find(post => post.id === postId)
+export const postsByUser = createSelector([selectAllPosts, (state: RootState, userId: number) => userId], (posts, userId) => posts.filter(post => post.userId === userId))
 
 export const { reactionAdded, increaseCount } = postSlice.actions
 

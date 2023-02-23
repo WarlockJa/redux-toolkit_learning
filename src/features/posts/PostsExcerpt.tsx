@@ -1,10 +1,18 @@
-import { PostType } from './postsSlice'
+import { PostType, selectPostById } from './postsSlice'
 import PostAuthor from "./PostAuthor";
 import TimeAgo from "./TimeAgo";
 import ReactionButtons from "./ReactionButtons";
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../app/store';
 
-const PostsExcerpt = ({ post }: { post: PostType }) => {
+interface IPostExcerpt {
+    ({ postId }: { postId: number }): JSX.Element
+}
+
+const PostsExcerpt: IPostExcerpt = ({ postId }) => {
+    const post = useSelector<RootState>(state => selectPostById(state, postId)) as PostType
+
     return (
         <article>
             <h2>{post.title}</h2>

@@ -1,7 +1,7 @@
 import { useSelector } from "react-redux"
 import { Link, useParams } from "react-router-dom"
 import { RootState } from "../../app/store"
-import { postsByUser } from "../posts/postsSlice"
+import { postsByUser, PostType } from "../posts/postsSlice"
 import { selectUserById } from "./usersSlice"
 
 const UserPage = () => {
@@ -17,7 +17,7 @@ const UserPage = () => {
         )
     }
 
-    const postsForUser = useSelector((state: RootState) => postsByUser(state, Number(userId)))
+    const postsForUser = useSelector((state: RootState) => postsByUser(state, Number(userId)) as PostType[])
 
     if (!postsForUser) {
         return (
