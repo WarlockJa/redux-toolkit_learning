@@ -1,4 +1,4 @@
-import { PostType, selectPostById } from './postsSlice'
+import { IPost, selectPostById } from './postsSlice'
 import PostAuthor from "./PostAuthor";
 import TimeAgo from "./TimeAgo";
 import ReactionButtons from "./ReactionButtons";
@@ -11,7 +11,7 @@ interface IPostExcerpt {
 }
 
 const PostsExcerpt: IPostExcerpt = ({ postId }) => {
-    const post = useSelector<RootState>(state => selectPostById(state, postId)) as PostType
+    const post = useSelector<RootState>(state => selectPostById(state, postId)) as IPost
 
     return (
         <article>

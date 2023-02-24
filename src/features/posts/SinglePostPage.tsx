@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { PostType, selectPostById } from "./postsSlice";
+import { IPost, selectPostById } from "./postsSlice";
 
 import PostAuthor from "./PostAuthor";
 import TimeAgo from "./TimeAgo";
@@ -20,7 +20,7 @@ const SinglePostPage = () => {
         )
     }
 
-    const post = useSelector<RootState>((state) => selectPostById(state, Number(postId))) as PostType | undefined
+    const post = useSelector<RootState>((state) => selectPostById(state, Number(postId))) as IPost | undefined
 
     if (!post) {
         return (

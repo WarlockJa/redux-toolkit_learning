@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { deletePost, PostType, selectPostById, updatePost } from "./postsSlice";
+import { deletePost, IPost, selectPostById, updatePost } from "./postsSlice";
 
 import { AppDispatch, RootState } from "../../app/store";
 
@@ -11,7 +11,7 @@ const EditPostForm = () => {
     const { postId } = useParams()
     const navigate = useNavigate()
 
-    const post = useSelector<RootState>((state) => selectPostById(state, Number(postId))) as PostType | undefined
+    const post = useSelector<RootState>((state) => selectPostById(state, Number(postId))) as IPost | undefined
     const users = useSelector(selectAllUsers)
     
     if (!post) {
@@ -54,7 +54,7 @@ const EditPostForm = () => {
     }
 
     const onDeletePostClicked = () => {
-        if(canSave) {
+        if (canSave) {
             try {
                 setRequestStatus('pending')
                 dispatch(deletePost({ id: post.id })).unwrap()
