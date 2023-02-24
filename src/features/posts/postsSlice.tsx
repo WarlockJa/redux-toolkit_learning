@@ -43,6 +43,13 @@ interface IDeletePost {
     id: number
 }
 
+interface IDeletePostResponse extends IDeletePost {
+    response?: {
+        status: number;
+        statusText: string;
+    }
+}
+
 const postsAdapter = createEntityAdapter<IPost>({
     sortComparer: (a, b) => b.postDate.localeCompare(a.postDate)
 })
@@ -77,7 +84,7 @@ export const updatePost = createAsyncThunk('posts/updatePost', async (initialPos
 export const deletePost = createAsyncThunk('posts/deletePost', async (initialPost: IDeletePost) => {
     const { id } = initialPost
     const response = await axios.delete(`${POSTS_URL}/${id}`)
-    return response?.status === 200 ? initialPost : `${response?.status}` //${response?.statusText}
+    return response?.status === 200 ? initialPost : { ...initialPost, response: { status: response?.status, statusText: response?.statusText } }//`${response?.status}: ${response?.statusText}`
 })
 
 const postSlice = createSlice({
@@ -97,7 +104,7 @@ const postSlice = createSlice({
     },
     extraReducers(builder) {
         builder
-            .addCase(deletePost.fulfilled, (state, action: PayloadAction<IDeletePost>) => {
+            .addCase(deletePost.fulfilled, (state, action: PayloadAction<IDeletePostResponse>) => {
                 if(!action.payload?.id) {
                     console.log('Cannot delete, post not found')
                     console.log(action.payload)
